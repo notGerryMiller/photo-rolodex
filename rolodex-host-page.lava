@@ -1,0 +1,147 @@
+{% comment %}
+╔══════════════════════════════════════════════════════════════════╗
+║  PHOTO ROLODEX — Host Page block                                 ║
+║                                                                  ║
+║  Paste this into a "Lava Application Content Block" (not a       ║
+║  plain HTML Content block -- this specific block type is what    ║
+║  auto-registers HTMX and knows how to resolve the "^/" endpoint  ║
+║  shorthand used below and in the two endpoint files). Set the    ║
+║  block's "Application" setting to the "rolodex" LavaApplication. ║
+║  This is the ONLY piece of the game that lives on a page rather  ║
+║  than inside a LavaEndpoint -- it draws the outer shell and      ║
+║  renders the "setup" endpoint's content directly into it.        ║
+║                                                                  ║
+║  Requires the "rolodex" LavaApplication with its "setup" and     ║
+║  "game" GET LavaEndpoints already created (see the two           ║
+║  companion .lava files and DEPLOYMENT.md).                       ║
+║                                                                  ║
+║  REQUIREMENTS                                                    ║
+║  • Rock RMS 18.0 or later. This is the version that added both    ║
+║    the LavaApplication/LavaEndpoint feature and the built-in      ║
+║    {[ dropdown ]} Lava shortcode the setup screen's List field     ║
+║    uses -- confirm Admin Tools > CMS includes "Lava               ║
+║    Applications" before building this out.                        ║
+║  • SQL Lava commands enabled on BOTH LavaEndpoints (set           ║
+║    "Enabled Lava Commands" to include "sql" on each one --        ║
+║    this is per-endpoint, separate from the System Settings        ║
+║    toggle blocks use). Neither endpoint needs anything beyond      ║
+║    "sql" -- sources are Person Tags, looked up with plain SQL     ║
+║    joins against Tag/TaggedItem, so no entity command is used.     ║
+║  • This block below uses {% renderlavaendpoint %} to render the   ║
+║    "setup" endpoint's content directly during this page's own     ║
+║    render, instead of an hx-get/hx-trigger="load" round trip.     ║
+║    That command has been available since 18.0; 18.2 added a fix  ║
+║    for parsing a querystring inside the route parameter, which    ║
+║    doesn't affect this build since the initial route has none.    ║
+║    Confirmed: unlike LavaEndpoints, this Content Block does not   ║
+║    need "renderlavaendpoint" separately enabled anywhere.         ║
+╚══════════════════════════════════════════════════════════════════╝
+{% endcomment %}
+
+<style>
+/*
+  Per the Rock UI skill (triumph-techkit:rock-ui), components/utilities/CSS
+  variables come first and custom CSS is a last resort. What's left here is
+  only markup Rock's own components can't produce without pulling in Rock's
+  client-side JS, which would break the "no JavaScript" requirement for this
+  game:
+    - .rd-mode-group: a JS-free segmented radio control. Rock's documented
+      radio-button-list and toggle controls both depend on Rock's own
+      scripts (js-rockradiobuttonlist / js-toggle-*) to manage the active
+      state, so they're not an option here. This uses the native
+      :checked + label sibling selector instead.
+    - .rd-flip-details: the tap-to-reveal card, built on native
+      <details>/<summary> so the reveal needs no script at all.
+    - .rd-choices-grid .btn: Bootstrap's .btn sets white-space: nowrap by
+      default, which would clip a long person's name instead of wrapping it.
+    - .rd-photo-card: a plain aspect-ratio property instead of Rock's
+      ratio-square utility, which relies on a padding-bottom technique that
+      expects an absolutely-positioned child -- not worth the risk on the
+      single most important element on the screen.
+    - .rd-more-info: the optional "more about this person" panel, also
+      built on native <details>/<summary> for the same JS-free reason as
+      the flip card. Unlike the flip card, its summary stays visible when
+      open (native toggle behavior) so it can be collapsed again.
+
+  Any value below that isn't a structural/behavioral necessity (radius,
+  color) references a Rock CSS variable rather than a hardcoded hex or px.
+*/
+#rolodex-app {
+  max-width: 480px;
+}
+
+.rd-mode-group {
+  display: flex;
+  width: 100%;
+}
+.rd-mode-group input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.rd-mode-group label {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 0;
+}
+.rd-mode-group label:first-of-type { border-radius: var(--rounded-xsmall) 0 0 var(--rounded-xsmall); }
+.rd-mode-group label:last-of-type  { border-radius: 0 var(--rounded-xsmall) var(--rounded-xsmall) 0; }
+.rd-mode-group input[type="radio"]:checked + label {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  z-index: 1;
+}
+
+.rd-flip-details > summary {
+  list-style: none;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.rd-flip-details > summary::-webkit-details-marker { display: none; }
+.rd-flip-details[open] > summary { display: none; }
+
+.rd-choices-grid .btn {
+  white-space: normal;
+}
+
+.rd-photo-card {
+  aspect-ratio: 1 / 1;
+}
+
+.rd-more-info > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.rd-more-info > summary::-webkit-details-marker { display: none; }
+.rd-more-info-body {
+  font-size: 0.9rem;
+}
+</style>
+
+{% comment %}
+  {% renderlavaendpoint %} calls the "setup" LavaEndpoint server-side and
+  drops its returned content right here, as part of this page's own
+  render -- no spinner, no extra HTTP round trip for the first screen.
+  ^/{applicationSlug}/{endpointSlug} is the same shorthand used for
+  hx-get/hx-post elsewhere in this build; update "rolodex" here if you
+  use a different LavaApplication slug. method:'get' matches the
+  endpoint's HTTP Method setting (GET is also the command's default if
+  omitted, but it's spelled out here for clarity). Confirmed:
+  renderlavaendpoint needs no separate "Enabled Lava Commands" setting
+  on this Content Block.
+
+  Every link the setup/game endpoints render afterward still targets
+  #rolodex-app via hx-get, so the rest of the game plays out with
+  normal HTMX swaps -- only this very first screen skips the round
+  trip.
+{% endcomment %}
+<div id="rolodex-app" class="mx-auto px-2">
+  {% renderlavaendpoint route:'^/rolodex/setup' method:'get' %}
+</div>

@@ -1,0 +1,131 @@
+{% comment %}
+╔══════════════════════════════════════════════════════════════════╗
+║  PHOTO ROLODEX — LavaEndpoint: setup                            ║
+║                                                                  ║
+║  Paste this whole file into the CodeTemplate field of a         ║
+║  LavaEndpoint named "setup" (HTTP Method: GET) that belongs to   ║
+║  the "rolodex" LavaApplication.                                  ║
+║                                                                  ║
+║  Requires Rock RMS 18.0 or later. This project targets 18.0+     ║
+║  exclusively -- see DEPLOYMENT.md for why.                        ║
+║                                                                  ║
+║  Endpoint settings (Admin Tools > CMS > Lava Applications):      ║
+║    Slug:                 setup                                  ║
+║    HTTP Method:          Get                                    ║
+║    Enabled Lava Commands: sql                                    ║
+║    Security Mode:        Application View (or your preference)  ║
+║                                                                  ║
+║  This template returns ONLY the inner content that goes inside  ║
+║  the host page's <div id="rolodex-app">...</div> -- it must     ║
+║  NOT re-emit that wrapping div itself, since the host page swaps ║
+║  this response directly into that div's innerHTML.              ║
+║                                                                  ║
+║  SOURCES ARE PERSON TAGS -- there is no hardcoded CONFIGURATION  ║
+║  block to maintain. The dropdown below is built live from every ║
+║  active, organization-wide Tag scoped to the Person entity. To   ║
+║  add a new "list" to the game, an admin/staff member just tags   ║
+║  the people they want (Person profile > tag icon, or a Grid's    ║
+║  "Tag" bulk action) -- nothing in this file needs to change.     ║
+║  Personal tags (owned by one staff member) are deliberately      ║
+║  excluded so one person's private tags don't clutter everyone    ║
+║  else's dropdown -- see the SQL query below.                     ║
+║                                                                  ║
+║  The List field uses Rock's built-in {[ dropdown ]} Lava          ║
+║  shortcode (longlistenabled:'true') rather than a hand-rolled     ║
+║  <select>, so it gets Rock's enhanced/searchable dropdown for     ║
+║  free. Lava shortcodes are not gated by "Enabled Lava Commands"   ║
+║  -- only sql/entitycommand-style commands are, so no extra        ║
+║  setting is needed for this.                                     ║
+╚══════════════════════════════════════════════════════════════════╝
+{% endcomment %}
+
+{% comment %}
+  ^/{applicationSlug}/{endpointSlug} is Rock's shorthand for calling a
+  Lava Endpoint from hx-get/hx-post (confirmed against a real working
+  Lava Application build elsewhere in this repo). Update "rolodex" if
+  you use a different LavaApplication slug.
+{% endcomment %}
+{% assign gameUrl = '^/rolodex/game' %}
+
+{% comment %}
+  Rock.SystemGuid.EntityType.PERSON is a stable GUID across every Rock
+  install (unlike EntityType.Id, which is just an auto-increment value
+  that can differ instance to instance) -- confirmed against
+  Rock/SystemGuid/EntityType.cs. OwnerPersonAliasId IS NULL means an
+  organization-wide tag, not a personal one owned by a single staff
+  member's login.
+{% endcomment %}
+{% sql %}
+  SELECT t.Id, t.Name
+  FROM Tag t
+  JOIN EntityType et ON et.Id = t.EntityTypeId
+  WHERE et.Guid                = '72657ED8-D16E-492E-AC12-144C5E7567E7'
+    AND t.OwnerPersonAliasId   IS NULL
+    AND t.IsActive              = 1
+  ORDER BY t.[Order], t.Name
+{% endsql %}
+{% assign tags = results %}
+
+<div class="text-center pt-4 pb-3">
+  <i class="fa fa-id-card-o text-primary" style="font-size: 3rem;"></i>
+  <h2 class="mt-2 mb-1">Photo Rolodex</h2>
+  <p class="text-muted mb-0">Learn names by face, one person at a time.</p>
+</div>
+
+<form hx-get="{{ gameUrl }}" hx-target="#rolodex-app">
+
+  {% comment %}
+    Rock ships a built-in {[ dropdown ]} Lava shortcode (seeded in the same
+    v18 migration that added Lava Applications, guid
+    7BA8EA13-BC09-4075-B0AF-F88AB1203953) rather than a hand-rolled
+    <select>. With longlistenabled:'true' it renders the same
+    chosen-select chosen-select-absolute classes documented in the Rock UI
+    skill, plus its own inline <script> that calls jQuery's .chosen()
+    immediately after the markup renders. That script re-runs every time
+    this shortcode's output is generated, including on the HTMX swap that
+    loads this setup screen, so it does not depend on Rock's page-load-only
+    global init to pick it up. Options come from child [[ item ]] tags,
+    built dynamically here from the tags query above; a leading blank item
+    keeps the "-- Choose a List --" placeholder and required-field behavior
+    identical to the previous plain <select>.
+  {% endcomment %}
+  {[ dropdown label:'List' name:'tag' longlistenabled:'true' isrequired:'true' ]}
+    [[ item value:'' text:'-- Choose a List --' ]][[ enditem ]]
+    {% for t in tags %}
+    [[ item value:'{{ t.Id }}' text:'{{ t.Name }}' ]][[ enditem ]]
+    {% endfor %}
+  {[ enddropdown ]}
+
+  <div class="form-group">
+    <label>Game Mode</label>
+    <div class="rd-mode-group">
+      <input type="radio" name="mode" id="rd-flip" value="flip" checked>
+      <label for="rd-flip" class="btn btn-default">
+        <i class="fa fa-eye"></i>&nbsp; Tap to Reveal
+      </label>
+      <input type="radio" name="mode" id="rd-quiz" value="quiz">
+      <label for="rd-quiz" class="btn btn-default">
+        <i class="fa fa-list-ul"></i>&nbsp; Multiple Choice
+      </label>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="checkbox mt-0">
+      <label>
+        <input type="checkbox" name="trk" value="1" checked>
+        Track score (Multiple Choice only)
+      </label>
+    </div>
+    <div class="checkbox mt-0">
+      <label>
+        <input type="checkbox" name="minfo" value="1" checked>
+        Show more about each person (household, campus, etc.) after answering
+      </label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-lg btn-block">
+    <i class="fa fa-play"></i>&nbsp; Start
+  </button>
+</form>

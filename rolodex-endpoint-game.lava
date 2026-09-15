@@ -1,0 +1,575 @@
+{% comment %}
+╔══════════════════════════════════════════════════════════════════╗
+║  PHOTO ROLODEX — LavaEndpoint: game                             ║
+║                                                                  ║
+║  Paste this whole file into the CodeTemplate field of a         ║
+║  LavaEndpoint named "game" (HTTP Method: GET) that belongs to    ║
+║  the "rolodex" LavaApplication.                                  ║
+║                                                                  ║
+║  Requires Rock RMS 18.0 or later. This project targets 18.0+     ║
+║  exclusively -- see DEPLOYMENT.md for why.                        ║
+║                                                                  ║
+║  Endpoint settings (Admin Tools > CMS > Lava Applications):      ║
+║    Slug:                 game                                    ║
+║    HTTP Method:          Get                                      ║
+║    Enabled Lava Commands: sql                                     ║
+║    Security Mode:        Application (inherit the app's grants)  ║
+║    Caching:              Never (every render depends on live     ║
+║                           query-string state)                    ║
+║                                                                  ║
+║  This template returns ONLY the inner content that goes inside  ║
+║  the host page's <div id="rolodex-app">...</div> -- it must     ║
+║  NOT re-emit that wrapping div itself.                           ║
+║                                                                  ║
+║  SOURCES ARE PERSON TAGS. Earlier drafts of this project used     ║
+║  Groups and Data Views as selectable sources, with a hardcoded    ║
+║  CONFIGURATION block that had to be hand-edited and kept in sync  ║
+║  across two files. That's gone -- the deck is now built from      ║
+║  whoever is tagged with the Tag the player picked on the setup    ║
+║  screen (see rolodex-endpoint-setup.lava), which is Rock's own    ║
+║  native "make a list of people" feature. Adding a new list is     ║
+║  now just tagging people in Rock -- no Lava editing required.     ║
+║                                                                  ║
+║  Verified against a real, working reference build in this repo  ║
+║  (the Cascade Hills Student Lookup Lava Application) rather than ║
+║  assumed:                                                        ║
+║    - QueryString.key reads a query-string value (dot notation,   ║
+║      not QueryString['key']).                                    ║
+║    - AsInteger is the real filter for string-to-int conversion.  ║
+║      There is no "ToInteger" filter in Rock's Lava -- earlier     ║
+║      drafts of this project used it and would have failed on     ║
+║      every single numeric conversion in the whole game.          ║
+║    - AsInteger returns null (not 0) when the input is blank or   ║
+║      non-numeric, so every conversion below explicitly guards    ║
+║      for that instead of assuming a zero fallback.               ║
+║    - Calling another endpoint from hx-get/hx-post uses the        ║
+║      "^/{applicationSlug}/{endpointSlug}" shorthand, not a        ║
+║      hand-built /api/v2/lava-app/... path.                       ║
+║    - {% sql %} takes named parameters (paramName:'{{ value }}'   ║
+║      then @paramName in the query body) for scalar values,        ║
+║      rather than interpolating {{ value }} directly into the SQL  ║
+║      text. This is Rock's own documented safe pattern for SQL     ║
+║      Lava. The one exception is the two IN (...) clauses below,   ║
+║      which take a variable-length list of ids -- standard SQL     ║
+║      parameters can't bind a list, so those still go through the  ║
+║      AsInteger-forced sanitization built for that specific case.  ║
+║    - TaggedItem links to a tagged Person through EntityGuid, not  ║
+║      an EntityId column (confirmed against                        ║
+║      Rock.Model.TaggedItem) -- the join below is on p.Guid, not   ║
+║      p.Id.                                                        ║
+║                                                                  ║
+║  NOTE ON BROWSER URL: unlike the original HTML-block version,    ║
+║  a LavaEndpoint's own URL is a bare API path with no Rock page   ║
+║  chrome. Pushing that raw URL into the address bar would make a  ║
+║  browser refresh show an unstyled fragment with no header/nav.   ║
+║  So this version does NOT use hx-push-url -- refreshing the      ║
+║  browser always returns to the setup screen on the host page.    ║
+║  If you want mid-game refresh/shareable URLs preserved, that      ║
+║  needs an extra layer (the host page reading its own query        ║
+║  string and this endpoint setting an HX-Push-Url response header  ║
+║  back to the host page's URL) -- ask if you want that built.      ║
+║                                                                  ║
+║  OPTIONAL "MORE ABOUT THIS PERSON" PANEL: the "minfo" query        ║
+║  param (checkbox on the setup screen, default on) controls a      ║
+║  collapsed <details> panel shown after you answer/reveal a card,  ║
+║  surfacing campus, connection status, how long they've been       ║
+║  tagged, household members, and up to 3 other non-family groups   ║
+║  they belong to. It's opt-in and collapsed-by-default on purpose ║
+║  -- the core loop stays a fast recall drill; the extra context    ║
+║  is a tap away, not forced.                                       ║
+╚══════════════════════════════════════════════════════════════════╝
+{% endcomment %}
+
+{% comment %}
+  ^/{applicationSlug}/{endpointSlug} is Rock's shorthand for calling a Lava
+  Endpoint from hx-get/hx-post -- update "rolodex" if you use a different
+  LavaApplication slug or rename either endpoint's slug.
+{% endcomment %}
+{% assign gameUrl  = '^/rolodex/game' %}
+{% assign setupUrl = '^/rolodex/setup' %}
+
+{% comment %}── Read the incoming request's query string ────────────────────────
+  Lava Endpoints expose the request via the QueryString merge field
+  (dot notation, e.g. QueryString.tag), not the PageParameter filter
+  blocks use. Every value defaults to an empty string when the key is
+  absent so the rest of the template can compare against '' uniformly.
+{% endcomment %}
+{% assign p_tag = '' %}
+{% if QueryString.tag %}{% assign p_tag = QueryString.tag %}{% endif %}
+{% assign p_mode = '' %}
+{% if QueryString.mode %}{% assign p_mode = QueryString.mode %}{% endif %}
+{% assign p_trk = '' %}
+{% if QueryString.trk %}{% assign p_trk = QueryString.trk %}{% endif %}
+{% assign p_deck = '' %}
+{% if QueryString.deck %}{% assign p_deck = QueryString.deck %}{% endif %}
+{% assign p_idx = '' %}
+{% if QueryString.idx %}{% assign p_idx = QueryString.idx %}{% endif %}
+{% assign p_sc = '' %}
+{% if QueryString.sc %}{% assign p_sc = QueryString.sc %}{% endif %}
+{% assign p_choice = '' %}
+{% if QueryString.choice %}{% assign p_choice = QueryString.choice %}{% endif %}
+{% assign p_choices = '' %}
+{% if QueryString.choices %}{% assign p_choices = QueryString.choices %}{% endif %}
+{% assign p_minfo = '' %}
+{% if QueryString.minfo %}{% assign p_minfo = QueryString.minfo %}{% endif %}
+
+{% comment %}── Apply defaults ──────────────────────────────────────────────────{% endcomment %}
+{% if p_mode == '' %}{% assign p_mode = 'flip' %}{% endif %}
+
+{% comment %}
+  AsInteger returns null (not 0) for a blank or non-numeric string, so
+  every conversion here is guarded explicitly rather than trusting a
+  zero fallback from the filter itself.
+{% endcomment %}
+{% assign idx = 0 %}
+{% if p_idx != '' %}{% assign idx = p_idx | AsInteger %}{% endif %}
+{% assign sc = 0 %}
+{% if p_sc != '' %}{% assign sc = p_sc | AsInteger %}{% endif %}
+{% assign choiceId = 0 %}
+{% if p_choice != '' %}{% assign choiceId = p_choice | AsInteger %}{% endif %}
+{% assign trackScore = false %}
+{% if p_trk == '1' %}{% assign trackScore = true %}{% endif %}
+{% assign showMoreInfo = false %}
+{% if p_minfo == '1' %}{% assign showMoreInfo = true %}{% endif %}
+
+{% comment %}── Parse the tag id ─────────────────────────────────────────────────{% endcomment %}
+{% assign tagId = 0 %}
+{% if p_tag != '' %}{% assign tagId = p_tag | AsInteger %}{% endif %}
+
+{% comment %}── Build shuffled deck on first game request (no deck param yet) ────{% endcomment %}
+{% if p_deck == '' and p_tag != '' %}
+  {% comment %}
+    SQL Server doesn't allow ORDER BY NEWID() combined directly with
+    SELECT DISTINCT -- ORDER BY items must appear in the select list
+    whenever DISTINCT is used, and NEWID() isn't selected. The DISTINCT
+    dedup happens in the inner query (in case someone was tagged more
+    than once with the same tag); the outer query has no DISTINCT of its
+    own, so ordering it by NEWID() is unrestricted.
+  {% endcomment %}
+  {% sql tagId:'{{ tagId }}' %}
+    SELECT Id
+    FROM (
+      SELECT DISTINCT p.Id
+      FROM TaggedItem ti
+      JOIN Person p ON p.Guid = ti.EntityGuid
+      WHERE ti.TagId              = @tagId
+        AND p.PhotoId              IS NOT NULL
+        AND p.RecordStatusValueId  = 3
+    ) AS TaggedPeople
+    ORDER BY NEWID()
+  {% endsql %}
+  {% assign p_deck = '' %}
+  {% for row in results %}
+    {% if p_deck == '' %}
+      {% assign p_deck = row.Id %}
+    {% else %}
+      {% assign p_deck = p_deck | Append:',' | Append:row.Id %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% comment %}── Deck state ──────────────────────────────────────────────────────{% endcomment %}
+{% comment %}
+  Guard: '' | Split:',' returns [''] in .NET (size 1), not [] (size 0).
+  Explicitly zero out totalCards when the deck string is empty.
+{% endcomment %}
+{% assign deckIds    = p_deck | Split:',' %}
+{% assign totalCards = deckIds | Size %}
+{% if p_deck == '' %}{% assign totalCards = 0 %}{% endif %}
+
+{% comment %}
+  Security: p_deck and p_choices come straight off the query string,
+  and the distractor/restore queries below interpolate them into a
+  SQL IN(). A variable-length list can't be bound as a single named
+  SQL parameter, so this is the one place values still get built into
+  a string before hitting SQL -- AsInteger forces every element to a
+  real integer (or 0 if it isn't one) first, so nothing but digits and
+  commas can ever reach the query text.
+{% endcomment %}
+{% assign safeDeckCsv = '' %}
+{% for d in deckIds %}
+  {% assign dInt = 0 %}
+  {% if d != '' %}{% assign dInt = d | AsInteger %}{% endif %}
+  {% if dInt == null %}{% assign dInt = 0 %}{% endif %}
+  {% if forloop.first %}
+    {% assign safeDeckCsv = dInt %}
+  {% else %}
+    {% assign safeDeckCsv = safeDeckCsv | Append:',' | Append:dInt %}
+  {% endif %}
+{% endfor %}
+
+{% comment %}── Fetch current card ──────────────────────────────────────────────{% endcomment %}
+{% assign currentId  = 0 %}
+{% assign personName = '' %}
+{% assign photoId    = 0 %}
+
+{% if totalCards > 0 and idx < totalCards %}
+  {% assign currentId = 0 %}
+  {% if deckIds[idx] != '' %}{% assign currentId = deckIds[idx] | AsInteger %}{% endif %}
+
+  {% comment %}
+    CampusName, ConnectionStatus, and TaggedSince are cheap scalar
+    left-joins added here regardless of showMoreInfo -- they're cheap on
+    a query that already runs every card, so it's simpler to always
+    select them and only decide whether to *display* them down in the
+    HTML. TaggedSince comes from TaggedItem.CreatedDateTime for this
+    specific tag + person combination (a real Model<T> audit column, so
+    it's always populated the moment someone is tagged).
+  {% endcomment %}
+  {% sql currentId:'{{ currentId }}' tagId:'{{ tagId }}' %}
+    SELECT
+      p.Id,
+      COALESCE(NULLIF(p.NickName,''), p.FirstName) AS DisplayFirst,
+      p.LastName,
+      p.PhotoId,
+      p.PrimaryFamilyId,
+      cs.Value AS ConnectionStatus,
+      c.Name AS CampusName,
+      ti.CreatedDateTime AS TaggedSince
+    FROM Person p
+    LEFT JOIN DefinedValue cs ON cs.Id = p.ConnectionStatusValueId
+    LEFT JOIN Campus c ON c.Id = p.PrimaryCampusId
+    LEFT JOIN TaggedItem ti ON ti.TagId = @tagId AND ti.EntityGuid = p.Guid
+    WHERE p.Id = @currentId
+  {% endsql %}
+  {% assign curPerson  = results | First %}
+  {% assign personName = curPerson.DisplayFirst | Append:' ' | Append:curPerson.LastName %}
+  {% assign photoId    = curPerson.PhotoId %}
+
+  {% comment %}── More-info lookups: household + other groups (only when enabled) ─
+    Two extra queries per card, only run when the player has the "Show
+    more about each person" checkbox on -- no reason to pay for these
+    joins when the feature is off.
+  {% endcomment %}
+  {% comment %}
+    Initialize as real empty arrays via FromJSON rather than '' | Split:','
+    -- that pattern (used deliberately elsewhere in this file for the CSV
+    deck/choices strings) actually returns a 1-element array containing an
+    empty string, not a 0-length array, which would make the .size > 0
+    checks below always true. '[]' | FromJSON gives a genuine empty list.
+  {% endcomment %}
+  {% assign familyMembers = '[]' | FromJSON %}
+  {% assign otherGroups   = '[]' | FromJSON %}
+  {% if showMoreInfo %}
+    {% if curPerson.PrimaryFamilyId %}
+      {% sql currentId:'{{ currentId }}' familyId:'{{ curPerson.PrimaryFamilyId }}' %}
+        SELECT
+          fm.Id,
+          COALESCE(NULLIF(fm.NickName,''), fm.FirstName) AS DisplayFirst,
+          fm.LastName
+        FROM GroupMember gm
+        JOIN Person fm ON fm.Id = gm.PersonId
+        WHERE gm.GroupId = @familyId AND fm.Id != @currentId
+        ORDER BY fm.BirthYear
+      {% endsql %}
+      {% assign familyMembers = results %}
+    {% endif %}
+
+    {% comment %}
+      Excludes the Family group type -- people you live with are already
+      shown above as "Household." There's no "group being played" to
+      exclude anymore since sources are Tags, not Groups. [Group] is
+      bracket-wrapped because it's a reserved SQL Server keyword.
+    {% endcomment %}
+    {% sql currentId:'{{ currentId }}' %}
+      SELECT TOP 3 g.Name
+      FROM GroupMember gm
+      JOIN [Group] g ON g.Id = gm.GroupId
+      JOIN GroupType gt ON gt.Id = g.GroupTypeId
+      WHERE gm.PersonId           = @currentId
+        AND gm.GroupMemberStatus  = 1
+        AND g.IsActive            = 1
+        AND g.IsArchived          = 0
+        AND g.IsSecurityRole      = 0
+        AND gt.Guid              != '790E3215-3B10-442B-AF69-616C0DCB998E'
+      ORDER BY gm.DateTimeAdded DESC
+    {% endsql %}
+    {% assign otherGroups = results %}
+  {% endif %}
+
+  {% comment %}
+    Pre-build the whole info panel once here (rather than in the flip/quiz
+    markup below) so the same markup can be reused in both modes without
+    duplicating it -- Lava has no macro/function construct, so a captured
+    variable is the standard way to share a block of rendered HTML.
+    moreInfoHtml stays an empty string when showMoreInfo is off, so both
+    call sites below can print it unconditionally.
+  {% endcomment %}
+  {% assign moreInfoHtml = '' %}
+  {% if showMoreInfo %}
+    {% capture moreInfoHtml %}
+      <details class="rd-more-info mt-2">
+        <summary class="btn btn-default btn-block">More about {{ personName }}</summary>
+        <div class="rd-more-info-body mt-2">
+          {% if curPerson.CampusName %}<p class="mb-1"><strong>Campus:</strong> {{ curPerson.CampusName }}</p>{% endif %}
+          {% if curPerson.ConnectionStatus %}<p class="mb-1"><strong>Connection Status:</strong> {{ curPerson.ConnectionStatus }}</p>{% endif %}
+          {% if curPerson.TaggedSince %}<p class="mb-1"><strong>Tagged since:</strong> {{ curPerson.TaggedSince | Date:'MMMM yyyy' }}</p>{% endif %}
+          {% if familyMembers.size > 0 %}
+            <p class="mb-1"><strong>Household:</strong>
+              {% for fm in familyMembers %}{{ fm.DisplayFirst }} {{ fm.LastName }}{% unless forloop.last %}, {% endunless %}{% endfor %}
+            </p>
+          {% endif %}
+          {% if otherGroups.size > 0 %}
+            <p class="mb-0"><strong>Also part of:</strong>
+              {% for og in otherGroups %}{{ og.Name }}{% unless forloop.last %}, {% endunless %}{% endfor %}
+            </p>
+          {% endif %}
+          {% if curPerson.CampusName == null and curPerson.ConnectionStatus == null and curPerson.TaggedSince == null and familyMembers.size == 0 and otherGroups.size == 0 %}
+            <p class="text-muted mb-0">No additional information on file.</p>
+          {% endif %}
+        </div>
+      </details>
+    {% endcapture %}
+  {% endif %}
+
+  {% comment %}── Quiz choices ──────────────────────────────────────────────────{% endcomment %}
+  {% if p_mode == 'quiz' %}
+    {% if p_choices == '' %}
+      {% comment %} First visit to this card: generate randomized choices via CTE {% endcomment %}
+      {% sql currentId:'{{ currentId }}' %}
+        WITH distractors AS (
+          SELECT TOP 3
+            p.Id,
+            COALESCE(NULLIF(p.NickName,''), p.FirstName) AS DisplayFirst,
+            p.LastName
+          FROM Person p
+          WHERE p.Id IN ({{ safeDeckCsv }}) AND p.Id != @currentId
+          ORDER BY NEWID()
+        ),
+        correct AS (
+          SELECT
+            p.Id,
+            COALESCE(NULLIF(p.NickName,''), p.FirstName) AS DisplayFirst,
+            p.LastName
+          FROM Person p
+          WHERE p.Id = @currentId
+        ),
+        all_choices AS (
+          SELECT Id, DisplayFirst, LastName FROM correct
+          UNION ALL
+          SELECT Id, DisplayFirst, LastName FROM distractors
+        )
+        SELECT Id, DisplayFirst, LastName FROM all_choices ORDER BY NEWID()
+      {% endsql %}
+      {% assign quizChoices = results %}
+      {% comment %} Build choices param string so answer request can restore order {% endcomment %}
+      {% assign p_choices = '' %}
+      {% for c in quizChoices %}
+        {% if p_choices == '' %}
+          {% assign p_choices = c.Id %}
+        {% else %}
+          {% assign p_choices = p_choices | Append:',' | Append:c.Id %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {% comment %} Answer state: restore choices in original display order {% endcomment %}
+      {% assign choiceIdList = p_choices | Split:',' %}
+      {% comment %} Security: sanitize p_choices the same way as p_deck before it hits SQL. {% endcomment %}
+      {% assign safeChoicesCsv = '' %}
+      {% for cid in choiceIdList %}
+        {% assign cidInt = 0 %}
+        {% if cid != '' %}{% assign cidInt = cid | AsInteger %}{% endif %}
+        {% if cidInt == null %}{% assign cidInt = 0 %}{% endif %}
+        {% if forloop.first %}
+          {% assign safeChoicesCsv = cidInt %}
+        {% else %}
+          {% assign safeChoicesCsv = safeChoicesCsv | Append:',' | Append:cidInt %}
+        {% endif %}
+      {% endfor %}
+      {% sql %}
+        SELECT p.Id, COALESCE(NULLIF(p.NickName,''), p.FirstName) AS DisplayFirst, p.LastName
+        FROM Person p
+        WHERE p.Id IN ({{ safeChoicesCsv }})
+      {% endsql %}
+      {% assign choicePool = results %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% comment %}── URL building helpers ────────────────────────────────────────────{% endcomment %}
+{% comment %}
+  Security: p_tag and p_mode are strings lifted straight from the
+  query string and get echoed back into href / hx-get attributes on
+  every screen. UrlEncode them before rebuilding any URL so a crafted
+  query string can't break out of the attribute and inject markup.
+  deck is rebuilt from safeDeckCsv (integers only) rather than the
+  raw p_deck string for the same reason.
+{% endcomment %}
+{% assign safeTag  = p_tag  | UrlEncode %}
+{% assign safeMode = p_mode | UrlEncode %}
+{% assign trkVal = '0' %}{% if trackScore %}{% assign trkVal = '1' %}{% endif %}
+{% assign minfoVal = '0' %}{% if showMoreInfo %}{% assign minfoVal = '1' %}{% endif %}
+{% assign baseGame    = gameUrl | Append:'?tag=' | Append:safeTag | Append:'&mode=' | Append:safeMode | Append:'&trk=' | Append:trkVal | Append:'&minfo=' | Append:minfoVal | Append:'&deck=' | Append:safeDeckCsv %}
+{% assign nextIdx     = idx | Plus:1 %}
+{% assign newSc       = sc %}
+{% if p_choice != '' and choiceId == currentId %}{% assign newSc = sc | Plus:1 %}{% endif %}
+{% assign nextCardUrl = baseGame | Append:'&idx=' | Append:nextIdx | Append:'&sc=' | Append:newSc %}
+{% assign playAgainUrl = gameUrl | Append:'?tag=' | Append:safeTag | Append:'&mode=' | Append:safeMode | Append:'&trk=' | Append:trkVal | Append:'&minfo=' | Append:minfoVal %}
+
+{% comment %}━━━━ HTML ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{% endcomment %}
+
+{% comment %}── Empty source ──{% endcomment %}
+{% if totalCards == 0 %}
+
+  <div class="alert alert-warning">
+    {% if p_tag == '' %}
+      <strong>No list selected.</strong>
+      Go back and choose one to start.
+    {% else %}
+      <strong>No people found.</strong>
+      Nobody tagged with this list has a profile photo yet.
+    {% endif %}
+  </div>
+  <a href="#" hx-get="{{ setupUrl }}" hx-target="#rolodex-app" class="btn btn-default btn-lg btn-block">
+    <i class="fa fa-arrow-left"></i>&nbsp; Back
+  </a>
+
+{% comment %}── All cards done ──{% endcomment %}
+{% elsif idx >= totalCards %}
+
+  <div class="text-center py-4">
+    <i class="fa fa-trophy text-warning" style="font-size: 3rem;"></i>
+    <h2 class="mt-3">All done!</h2>
+    <p class="text-muted">
+      You reviewed all <strong>{{ totalCards }}</strong> people.
+    </p>
+    {% if p_mode == 'quiz' and trackScore %}
+      {% assign pct = newSc | Times:100 | DividedBy:totalCards, 0 %}
+      <div class="mb-4" style="font-size: 1.25rem;">
+        <strong>{{ newSc }} / {{ totalCards }}</strong> correct ({{ pct }}%)
+      </div>
+    {% endif %}
+    <a href="#" hx-get="{{ playAgainUrl }}" hx-target="#rolodex-app" class="btn btn-primary btn-lg btn-block mb-2">
+      <i class="fa fa-refresh"></i>&nbsp; Play Again
+    </a>
+    <a href="#" hx-get="{{ setupUrl }}" hx-target="#rolodex-app" class="btn btn-default btn-lg btn-block">
+      Change List
+    </a>
+  </div>
+
+{% comment %}── Active card ──{% endcomment %}
+{% else %}
+
+  {% comment %}── Header: back / progress counter / score ──{% endcomment %}
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <a href="#" hx-get="{{ setupUrl }}" hx-target="#rolodex-app" class="btn btn-default btn-sm">
+      <i class="fa fa-arrow-left"></i>
+    </a>
+    <span class="text-muted small">{{ idx | Plus:1 }} / {{ totalCards }}</span>
+    {% if p_mode == 'quiz' and trackScore %}
+      {% comment %}
+        Use newSc, not sc: newSc already reflects this card's
+        just-submitted answer (see "URL building helpers" above).
+        Displaying sc here would leave the score looking stale by
+        one card on the post-answer view.
+      {% endcomment %}
+      <span class="text-muted small">{{ newSc }} correct</span>
+    {% else %}
+      <span></span>
+    {% endif %}
+  </div>
+
+  {% comment %}── Progress bar: Rock's native progress component ──{% endcomment %}
+  {% assign pct = idx | Times:100 | DividedBy:totalCards, 0 %}
+  <div class="progress mb-3">
+    <div class="progress-bar" role="progressbar" style="width: {{ pct }}%;"
+         aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+  </div>
+
+  {% comment %}── Photo ──{% endcomment %}
+  <div class="rd-photo-card rounded-lg shadow-md bg-gray-100 overflow-hidden mb-3">
+    <img src="/GetImage.ashx?Id={{ photoId }}&maxWidth=600" alt="Guess who?"
+         class="w-100 h-100 object-cover" style="object-position: center top;" />
+  </div>
+
+  {% comment %}────────────────────────────────────────────────────────────────
+      FLIP MODE — pure CSS details/summary reveal.
+      Clicking the summary opens the details element;
+      CSS hides the summary once open and reveals the name + Next link.
+  ─────────────────────────────────────────────────────────────────────────{% endcomment %}
+  {% if p_mode == 'flip' %}
+    <details class="rd-flip-details">
+      <summary class="btn btn-primary btn-lg">Tap to Reveal Name</summary>
+      <h2 class="text-center my-3">{{ personName }}</h2>
+      {{ moreInfoHtml }}
+      <a href="#" hx-get="{{ nextCardUrl }}" hx-target="#rolodex-app" class="btn btn-success btn-lg btn-block mt-2">
+        Next &nbsp;<i class="fa fa-arrow-right"></i>
+      </a>
+    </details>
+  {% endif %}
+
+  {% comment %}────────────────────────────────────────────────────────────────
+      QUIZ MODE
+      Pre-answer:  4 choice buttons, each is an HTMX link.
+      Post-answer: disabled colored buttons + result text + Next link.
+  ─────────────────────────────────────────────────────────────────────────{% endcomment %}
+  {% if p_mode == 'quiz' %}
+
+    {% if p_choice == '' %}
+
+      {% comment %}── Pre-answer: choice buttons ──{% endcomment %}
+      <div class="rd-choices-grid d-grid grid-cols-2 gap-3 mb-3">
+        {% for c in quizChoices %}
+          {% assign choiceUrl = baseGame | Append:'&idx=' | Append:idx | Append:'&sc=' | Append:sc | Append:'&choices=' | Append:p_choices | Append:'&choice=' | Append:c.Id %}
+          <a href="#" hx-get="{{ choiceUrl }}" hx-target="#rolodex-app" class="btn btn-default btn-lg">
+            {{ c.DisplayFirst }} {{ c.LastName }}
+          </a>
+        {% endfor %}
+      </div>
+
+    {% else %}
+
+      {% comment %}── Post-answer: colored buttons restored in original order ──{% endcomment %}
+      <div class="rd-choices-grid d-grid grid-cols-2 gap-3 mb-3">
+        {% for cid in choiceIdList %}
+          {% comment %}
+            Compare as integers on both sides, not raw strings. cid
+            comes from splitting the choices query param and row.Id
+            comes back from SQL -- AsInteger both first so formatting
+            differences can't cause a false negative.
+          {% endcomment %}
+          {% assign cidInt = 0 %}
+          {% if cid != '' %}{% assign cidInt = cid | AsInteger %}{% endif %}
+          {% if cidInt == null %}{% assign cidInt = 0 %}{% endif %}
+          {% for row in choicePool %}
+            {% assign rowIdInt = row.Id | AsInteger %}
+            {% if rowIdInt == cidInt %}
+              {% if cidInt == currentId %}
+                <button type="button" class="btn btn-success btn-lg" disabled>
+                  {{ row.DisplayFirst }} {{ row.LastName }}&nbsp;<i class="fa fa-check"></i>
+                </button>
+              {% elsif cidInt == choiceId %}
+                <button type="button" class="btn btn-danger btn-lg" disabled>
+                  {{ row.DisplayFirst }} {{ row.LastName }}
+                </button>
+              {% else %}
+                <button type="button" class="btn btn-default btn-lg o-50" disabled>
+                  {{ row.DisplayFirst }} {{ row.LastName }}
+                </button>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+
+      <div style="font-size: 1.1rem;">
+        {% if choiceId == currentId %}
+          <span class="text-success"><i class="fa fa-check"></i>&nbsp; Correct!</span>
+        {% else %}
+          <span class="text-danger"><i class="fa fa-times"></i>&nbsp; That's {{ personName }}</span>
+        {% endif %}
+      </div>
+
+      {{ moreInfoHtml }}
+
+      <div class="text-center mt-3">
+        <a href="#" hx-get="{{ nextCardUrl }}" hx-target="#rolodex-app" class="btn btn-default btn-lg">
+          Next &nbsp;<i class="fa fa-arrow-right"></i>
+        </a>
+      </div>
+
+    {% endif %}
+
+  {% endif %}
+
+{% endif %}

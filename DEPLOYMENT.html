@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Photo Rolodex — Deployment Guide</title>
+<style>
+  :root {
+    --color-primary: #2c6ecb;
+    --color-text: #1f2328;
+    --color-muted: #57606a;
+    --color-border: #d0d7de;
+    --color-bg-code: #f6f8fa;
+    --color-bg-callout: #f0f6ff;
+    --color-warning-bg: #fff8e6;
+    --color-warning-border: #eac54f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--color-text);
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  h1 {
+    font-size: 1.9rem;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin-top: 2.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  h2.section-number {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.7rem;
+    height: 1.7rem;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  p { margin: 0.75rem 0; }
+  .intro {
+    background: var(--color-bg-callout);
+    border: 1px solid #c6dcfb;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .callout-warning {
+    background: var(--color-warning-bg);
+    border: 1px solid var(--color-warning-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+  }
+  th, td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--color-bg-code);
+    font-weight: 600;
+  }
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.88em;
+  }
+  pre {
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  ol, ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+  }
+  li { margin: 0.35rem 0; }
+  ol.step-list {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: step;
+  }
+  ol.step-list > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 2.4rem;
+    margin: 0.6rem 0;
+  }
+  ol.step-list > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.7rem;
+    height: 1.7rem;
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+  .endpoint-card {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+  }
+  .endpoint-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+  }
+  .endpoint-card dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0;
+  }
+  .endpoint-card dt {
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+  .endpoint-card dd {
+    margin: 0;
+  }
+  .notes-list {
+    padding-left: 1.25rem;
+  }
+  .notes-list li {
+    margin: 0.9rem 0;
+  }
+  .fallback-box {
+    background: #f6f8fa;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  strong { color: var(--color-text); }
+  .file-name { font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2.5rem 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Photo Rolodex — Deployment Guide</h1>
+
+<div class="intro">
+  <p><strong>This game requires Rock RMS 18.0 or later</strong>, no exceptions. That's the version that introduced both the Lava Applications feature and the built-in <code>{[ dropdown ]}</code> Lava shortcode used on the setup screen, and this project is built exclusively against that floor.</p>
+  <p>There are two ways to deploy it. <strong>The Lava Application build below is the current, recommended version</strong> and is what the rest of this guide covers. A simpler single-file alternative (<code>photo-rolodex.lava</code>, a plain HTML Content block) also exists in this folder if you'd rather not set up a full Lava Application with two separate endpoints — see the bottom of this document. Both require Rock 18.0+; the fallback file is a setup-complexity choice, not a version workaround.</p>
+</div>
+
+<h2>Before You Start: Confirm You're on Rock 18.0+</h2>
+<p>Go to <strong>Admin Tools &gt; CMS Configuration</strong>. If there is no <strong>Lava Applications</strong> item, you're on an older Rock version and this game won't work yet — upgrade to 18.0+ before building either version out.</p>
+
+<h2>Files in This Build</h2>
+<table>
+  <thead>
+    <tr><th>File</th><th>Goes into</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="file-name"><code>rolodex-endpoint-setup.lava</code></td><td>The <code>setup</code> LavaEndpoint's CodeTemplate</td></tr>
+    <tr><td class="file-name"><code>rolodex-endpoint-game.lava</code></td><td>The <code>game</code> LavaEndpoint's CodeTemplate</td></tr>
+    <tr><td class="file-name"><code>rolodex-host-page.lava</code></td><td>A <strong>Lava Application Content Block</strong> (not a plain HTML Content block) on a normal Rock page</td></tr>
+  </tbody>
+</table>
+
+<h2 class="section-number"><span class="badge">1</span> Create the Lava Application</h2>
+<ol class="step-list">
+  <li>Admin Tools &gt; CMS Configuration &gt; Lava Applications &gt; Add.</li>
+  <li><strong>Name:</strong> Photo Rolodex</li>
+  <li><strong>Slug:</strong> <code>rolodex</code> (if you use a different slug, you must update it in all three files — each one has a <code>gameUrl</code>/<code>setupUrl</code> variable near the top with <code>rolodex</code> hardcoded into the path).</li>
+  <li>Save.</li>
+</ol>
+
+<h2 class="section-number"><span class="badge">2</span> Create the Two LavaEndpoints</h2>
+<p>Inside the Lava Application you just created, add two endpoints:</p>
+
+<div class="endpoint-card">
+  <h3>Endpoint 1</h3>
+  <dl>
+    <dt>Name</dt><dd>Setup</dd>
+    <dt>Slug</dt><dd><code>setup</code></dd>
+    <dt>HTTP Method</dt><dd><code>Get</code></dd>
+    <dt>Enabled Lava Commands</dt><dd><code>sql</code></dd>
+    <dt>Security Mode</dt><dd>your preference (Application View is a reasonable default for internal staff use)</dd>
+    <dt>CodeTemplate</dt><dd>paste the full contents of <code>rolodex-endpoint-setup.lava</code></dd>
+  </dl>
+</div>
+
+<div class="endpoint-card">
+  <h3>Endpoint 2</h3>
+  <dl>
+    <dt>Name</dt><dd>Game</dd>
+    <dt>Slug</dt><dd><code>game</code></dd>
+    <dt>HTTP Method</dt><dd><code>Get</code></dd>
+    <dt>Enabled Lava Commands</dt><dd><code>sql</code></dd>
+    <dt>Security Mode</dt><dd>same as Endpoint 1</dd>
+    <dt>CodeTemplate</dt><dd>paste the full contents of <code>rolodex-endpoint-game.lava</code></dd>
+  </dl>
+</div>
+
+<p>The "Enabled Lava Commands" setting here is per-endpoint — it's separate from the System Settings &gt; Lava Engine toggle that HTML Content blocks use. Both endpoints need <code>sql</code> or every <code>{% sql %}</code> block in them will fail. Neither endpoint needs anything beyond <code>sql</code> — the list of who's in the game comes from Rock's Tag system, looked up with a plain SQL join, so there's no entity command to enable.</p>
+
+<h2 class="section-number"><span class="badge">3</span> Create the Host Page</h2>
+<ol class="step-list">
+  <li>Admin Tools &gt; CMS Configuration &gt; Pages. Pick a parent page (internal staff area recommended).</li>
+  <li>Add a new page, name it "Photo Rolodex" or similar. Any full-width layout works.</li>
+  <li>Add a block to the main zone, block type <strong>Lava Application Content Block</strong> — not a plain "HTML Content" block. This specific block type is what auto-registers HTMX and resolves the <code>^/</code> endpoint shorthand used in this build.</li>
+  <li>Set the block's <strong>Application</strong> setting to the "Photo Rolodex" LavaApplication you created in step 1.</li>
+  <li>Paste the full contents of <code>rolodex-host-page.lava</code> into the block's content editor. Save.</li>
+</ol>
+
+<h2 class="section-number"><span class="badge">4</span> Tag the People Who Should Be in the Game</h2>
+<p>There is no CONFIGURATION block to edit in either endpoint file, and no group or data view IDs to keep in sync across files. Sources are <strong>Rock Tags</strong> — the setup screen's dropdown is built live from a SQL query against <code>Tag</code>/<code>EntityType</code>, so adding a new "list" to the game is a Rock admin/staff action, not a code edit:</p>
+
+<ol class="step-list">
+  <li>In Rock, tag the people you want in a given list. Two ways to do this:
+    <ul>
+      <li><strong>One person at a time:</strong> open their Person profile, click the tag icon near the top, and add (or create) a tag.</li>
+      <li><strong>In bulk:</strong> run a Grid (e.g., a Data View or a group's member list) that includes the people you want, select them, and use the Grid's "Tag" bulk action.</li>
+    </ul>
+  </li>
+  <li>When creating a new tag, make sure it is:
+    <ul>
+      <li><strong>Scoped to Person</strong> (not another entity type).</li>
+      <li><strong>Organization-wide</strong>, not personal — personal tags (owned by a single staff login) are deliberately excluded from the dropdown so one person's private tags don't clutter everyone else's list.</li>
+      <li><strong>Active</strong> — inactive tags don't appear in the dropdown.</li>
+    </ul>
+  </li>
+  <li>That's it. The next time someone opens the setup screen, the new tag shows up in the dropdown automatically. No endpoint files need to be touched.</li>
+</ol>
+
+<p>This is intentionally opt-in, not "every tag in Rock." Only organization-wide, active, Person-scoped tags appear — so a tag someone created for an unrelated purpose won't accidentally show up unless it happens to meet those three conditions.</p>
+
+<p>Every tag used here should only be applied to people with <code>PhotoId</code> set — people without a profile photo are automatically excluded from the deck, so a tagged person with no photo just won't appear in the game (harmless, but worth knowing if a deck looks smaller than expected).</p>
+
+<h2 class="section-number"><span class="badge">5</span> Test</h2>
+<p>Work through each of these before considering the game ready for real use:</p>
+<ol class="step-list">
+  <li><strong>Load the host page.</strong> You should see a brief spinner, then the setup screen with your dropdown populated with the tags from step 4.</li>
+  <li><strong>Tap to Reveal.</strong> Pick a list, leave mode on Tap to Reveal, hit Start. Confirm a photo loads, tapping "Tap to Reveal Name" shows the correct name, and Next advances to a new person each time until you reach the "All done" screen.</li>
+  <li><strong>A second, differently-tagged list.</strong> Tag a different set of people with a second tag, go back to the setup screen, and confirm that tag also appears in the dropdown and plays correctly. This confirms the dropdown and deck-building query are both reading tags live rather than anything cached.</li>
+  <li><strong>Multiple Choice, right and wrong answers.</strong> Switch mode to Multiple Choice, keep "Track score" checked, and play through a few cards — tap the correct name at least once (confirms the green highlight and the score counter increments) and tap a wrong name at least once (confirms your pick turns red, the correct name turns green, and the score does <em>not</em> increment).</li>
+  <li><strong>Play Again / Change List.</strong> Reach the "All done" screen (with score tracking on, confirm the X/Y correct percentage displays), then try both Play Again (same list/mode, freshly reshuffled) and Change List (returns to the setup screen).</li>
+  <li><strong>More-info panel, positive case.</strong> With "Show more about each person" checked, find a person who has a campus, connection status, household members, and/or other group memberships on file, and confirm the "More about [Name]" panel expands to show them after answering/revealing, including "Tagged since" with the date they were tagged.</li>
+  <li><strong>More-info panel, negative case.</strong> Find (or temporarily use) a person with none of those fields filled in and confirm the panel shows "No additional information on file" instead of an empty or broken-looking panel.</li>
+  <li><strong>Checkbox off.</strong> Uncheck "Show more about each person" on the setup screen and confirm the panel doesn't appear at all during play.</li>
+  <li><strong>Empty list.</strong> Pick (or create) a tag with no people on it, or where every tagged person lacks a profile photo, and confirm the game shows "Nobody tagged with this list has a profile photo yet" instead of erroring.</li>
+</ol>
+
+<h2>Optional: "More About This Person" Panel</h2>
+<p>Both <code>rolodex-endpoint-setup.lava</code> and <code>rolodex-endpoint-game.lava</code> (and the fallback file) include an optional, collapsed-by-default panel that appears after a card is answered/revealed, showing campus, connection status, how long the person has been tagged with the list being played, household members, and up to 3 other non-family groups they belong to. It's controlled by a "Show more about each person" checkbox on the setup screen (default checked) and threaded through the game via a <code>minfo</code> query param, the same way the score-tracking checkbox works. No extra CMS Configuration setup is required — it's built entirely into the two endpoint files you're already pasting in.</p>
+<p>If you'd rather exclude a particular group type from the "also part of" list (by default it excludes Family-type groups), the exclusion is a hardcoded GroupType GUID (<code>790E3215-3B10-442B-AF69-616C0DCB998E</code>, Rock's built-in Family group type) near the bottom of the "more-info lookups" section in <code>rolodex-endpoint-game.lava</code> — update it there if needed.</p>
+
+<h2>Notes on How This Version Works</h2>
+<ul class="notes-list">
+  <li>Almost no JavaScript. Every interaction is either a native HTML element (the <code>&lt;details&gt;/&lt;summary&gt;</code> flip card and the "more about this person" panel) or an HTMX link, with one exception: the List field on the setup screen uses Rock's built-in <code>{[ dropdown ]}</code> Lava shortcode with <code>longlistenabled:'true'</code> for a searchable, enhanced dropdown. That shortcode's own markup includes a small inline <code>&lt;script&gt;</code> that initializes jQuery's Chosen plugin, which is why it works reliably even though the setup screen is delivered as an HTMX-swapped fragment rather than a normal page load. The fallback file (<code>photo-rolodex.lava</code>) uses the same shortcode for the same field, since this project targets Rock 18.0+ exclusively and that version floor already guarantees the shortcode exists.</li>
+  <li>The host page renders the <code>setup</code> endpoint's content directly into <code>#rolodex-app</code> using Rock's <code>{% renderlavaendpoint %}</code> Lava command, so the setup screen is part of the page's own initial HTML — no spinner, no extra HTTP round trip for that first screen. Every link the two endpoints render afterward still targets that same div via <code>hx-get</code>, so the rest of the game plays out with normal HTMX swaps — no <code>hx-select</code> trick needed, because a LavaEndpoint's response is already just the raw fragment (Rock doesn't wrap it in page chrome at all). Unlike LavaEndpoints, the Lava Application Content Block does not need <code>renderlavaendpoint</code> separately enabled anywhere.</li>
+  <li>Game state (deck order, current index, score) is still carried entirely in the query string of each request, same design as the fallback file, just read via the <code>QueryString</code> merge field instead of the <code>PageParameter</code> filter (Lava Endpoints don't expose <code>PageParameter</code>).</li>
+  <li><strong>Trade-off vs. the fallback file:</strong> a LavaEndpoint's own URL (<code>/api/v2/lava-app/1/rolodex/game?...</code>) is a bare API path with no site header, footer, or styling. Pushing that into the browser's address bar (like the fallback file did with <code>hx-push-url</code>) would mean a page refresh mid-game shows an unstyled raw fragment instead of your site. So this version does <strong>not</strong> update the address bar — refreshing the browser always returns to the setup screen, and there's no shareable "resume this exact game" URL. If you want that back, it's possible but needs an extra layer (the host page reading its own query string on load, and the game endpoint setting an <code>HX-Push-Url</code> response header back to the host page's URL instead of the API URL) — ask if you want that built out.</li>
+  <li>Every link in this version uses <code>href="#"</code> with the real navigation handled by <code>hx-get</code>, instead of a working <code>href</code> as a fallback (like the plain-block version had). That's intentional: the "real" URL behind each link is the bare API endpoint, which would be a worse experience than a dead link if HTMX somehow failed to load, since it dumps an unstyled fragment with no way back.</li>
+</ul>
+
+<hr>
+
+<h2>Alternative: Plain HTML Content Block</h2>
+<div class="fallback-box">
+  <p>This is not a version workaround — it also requires Rock 18.0+. If you'd rather not set up a full Lava Application (one LavaApplication, two LavaEndpoints, a host page), <code>photo-rolodex.lava</code> in this folder is a complete, self-contained alternative: one file, one HTML Content block, no CMS Configuration setup beyond enabling <code>sql</code> Lava commands globally (Admin Tools &gt; System Settings &gt; Lava Engine). It has real <code>href</code> links (so it degrades to plain navigation instead of dead links if HTMX fails) and preserves progress across a page refresh, at the cost of not being a "real" Lava Application. It uses the same Tag-based sourcing as this version — tag people in Rock, and they show up in the dropdown — and the same <code>{[ dropdown ]}</code> shortcode for the enhanced List field. It has been through the same bug-check and Rock UI conventions pass.</p>
+</div>
+
+</body>
+</html>
