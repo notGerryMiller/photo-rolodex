@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>A Game Worth Playing Blog Post</title>
+<style>
+:root {
+    --invictus: #0A2540;
+    --invictus-tone: #164371;
+    --electric: #4BA9DF;
+    --electric-tone: #3097D2;
+    --twilight: #5D758B;
+    --twilight-soft: #CFD8E3;
+    --ink: #0D1117;
+    --muted: #425466;
+    --border: #D9D9E3;
+    --surface-soft: #F8F8FC;
+}
+* { box-sizing: border-box; }
+body {
+    font-family: 'Goldman Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    margin: 0;
+    background: #FFFFFF;
+    line-height: 1.7;
+}
+.header {
+    background: linear-gradient(135deg, var(--invictus) 0%, var(--invictus-tone) 100%);
+    padding: 48px 56px 40px;
+    color: #FFFFFF;
+}
+.eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--electric);
+    background: rgba(255,255,255,0.08);
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+.header h1 { font-weight: 900; font-size: 2.1rem; margin: 0 0 12px; max-width: 700px; line-height: 1.25; }
+.header .subtitle { font-size: 1.1rem; color: #CFD8E3; margin: 0; max-width: 620px; }
+.meta-row {
+    margin-top: 22px;
+    font-size: 0.85rem;
+    color: #97A9BA;
+}
+.content { max-width: 720px; margin: 0 auto; padding: 44px 56px 60px; }
+h2 {
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: var(--invictus);
+    margin: 40px 0 14px;
+}
+p { margin: 0 0 18px; color: var(--muted); font-size: 1.03rem; }
+p.lede { font-size: 1.15rem; color: var(--ink); }
+strong { color: var(--ink); }
+.pull-quote {
+    border-left: 4px solid var(--electric);
+    padding: 6px 22px;
+    margin: 30px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--invictus);
+    font-style: normal;
+}
+.callout {
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 28px 0;
+    color: var(--muted);
+}
+.callout strong { color: var(--invictus); }
+a { color: var(--electric-tone); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+.cta {
+    display: inline-block;
+    background: var(--invictus);
+    color: #FFFFFF !important;
+    padding: 12px 26px;
+    border-radius: 8px;
+    font-weight: 700;
+    margin: 6px 0 0;
+}
+.cta:hover { background: var(--invictus-tone); text-decoration: none; }
+footer {
+    max-width: 720px; margin: 0 auto; padding: 24px 56px 48px;
+    border-top: 1px solid var(--border); color: var(--twilight); font-size: 0.82rem;
+}
+@media (max-width: 640px) {
+    .header, .content, footer { padding-left: 24px; padding-right: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="eyebrow">Triumph Tech &middot; Engagement</div>
+    <h1>The Fastest Way to Make Someone Feel Like They Belong Is to Say Their Name</h1>
+    <p class="subtitle">Why we built a name-guessing game into Rock, and why we think it matters more than it sounds like it should.</p>
+    <div class="meta-row">By Gerry Miller, Triumph Tech</div>
+</div>
+
+<div class="content">
+
+<p class="lede">
+Think of the last time someone you'd only met once said your name back to you. Not "hey friend," not a wave from across the room. Your actual name. It probably felt small. It probably also felt enormous.
+</p>
+
+<p>
+That is the whole idea behind this post, so we might as well start there instead of saving it for the end. We did not build a game because we wanted to build a game. We built it because knowing someone's name is one of the simplest, cheapest, most powerful things a church can do, and it is quietly one of the hardest things to keep doing as a church grows.
+</p>
+
+<div class="pull-quote">People do not remember what you built for them. They remember that you knew them.</div>
+
+<p>
+Every growing church runs into the same wall. The greeter team doubles. Small group leaders inherit rosters from three merged groups. A new staff member starts in September and by Advent is still doing the "I'm so sorry, remind me of your name" shuffle with people who have been sitting in the same row for a decade. Nobody is failing here. There are just more names than any one brain was built to hold, and the usual fix, a spreadsheet nobody opens or a photo directory nobody has time to study, asks people to do homework for something that is supposed to feel like love.
+</p>
+
+<h2>Why we started here instead of with the technology</h2>
+
+<p>
+It would have been easy to write this post the other way around: lead with the clever part, HTMX swapping fragments into a Rock page without a page reload, and mention the ministry reason as a footnote. We did not want to do that, because it gets the order backward. The technology is not the point. The technology is just what let us say yes to the point.
+</p>
+
+<p>
+The point is this: knowing someone's name is an act of pastoral care before it is anything else. It tells a person, in the space of one word, that they are not anonymous here. And if that is true, then anything that makes name-learning faster and more repeatable for the people doing the work of welcome, greeters, small group leaders, new staff, serving-team volunteers, is worth building well.
+</p>
+
+<h2>What we built</h2>
+
+<p>
+We call it Photo Rolodex. It is a simple game, live inside your own Rock instance, using your own people and your own photos. A face shows up. You guess the name, either by tapping to reveal it or picking it out of a few choices. Get it right, feel that little spark of "I know them now." Get it wrong, no harm done, you will see that face again before the deck runs out.
+</p>
+
+<p>
+There is nothing to configure ahead of time in the way you might expect. No list of names to type in, no group IDs to keep updated. You just tag the people you want in a given round, the way you already tag people in Rock for anything else, and they show up in the game automatically. Want to build a deck of this year's new members? Tag them. Want small group leaders to learn just their own group's faces? Tag them. The game gets its roster from your church's own data, not from a spreadsheet someone has to remember to update.
+</p>
+
+<div class="callout">
+<strong>For the developers reading this:</strong> we wrote up exactly how it works, the Lava, the HTMX wiring, the Rock Tag sourcing, as a Rock Community Recipe. If you want to build this into your own instance or just see how the pieces fit, <a href="#">read the recipe</a>.
+</div>
+
+<h2>Why this is a Triumph kind of project</h2>
+
+<p>
+We spend most of our days doing the unglamorous, essential work of making Rock do exactly what a church needs it to do. That work matters, and it rarely photographs well. Every once in a while, though, a project comes along that is both technically interesting and just plain fun, and we think those are worth celebrating loudly rather than tucking into a release note.
+</p>
+
+<p>
+HTMX is not yet common in the Rock world. It is a small, quiet technology that lets a page update itself without a heavy JavaScript framework standing behind it, which means a church admin does not need a development team on retainer to keep something like this running. We like tools that widen who gets to build, not narrow it. That is the kind of technology we want to be known for using well.
+</p>
+
+<h2>What we hope happens next</h2>
+
+<p>
+We hope a greeter team plays this on a Tuesday afternoon before Sunday and walks in Sunday already knowing three more names than they did last week. We hope a new hire uses it instead of quietly hoping nobody asks them who that is in the third pew. We hope a small group leader learns every name in their group before week two instead of week eight.
+</p>
+
+<p>
+Mostly, we hope it reminds a few people that being known is not a big program with a budget line. Sometimes it is a face on a screen and one more chance to get someone's name right, on purpose, before you ever meet them in the hallway.
+</p>
+
+<p>
+That is a game worth playing. Go build it into your church.
+</p>
+
+<a class="cta" href="#">Read the Rock Community Recipe &rarr;</a>
+
+</div>
+
+<footer>
+Written by Gerry Miller for Triumph Tech. Have a story about learning names well at your church? We would love to hear it, reach out at <a href="mailto:hello@triumph.tech">hello@triumph.tech</a>.
+</footer>
+
+</body>
+</html>

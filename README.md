@@ -4,6 +4,14 @@ A "guess the name from the photo" game for Rock RMS, built with Lava and HTMX. I
 
 Almost no JavaScript is used. Interactions are either native HTML (`<details>/<summary>` flip cards) or HTMX partial swaps, so photos and names refresh in place without a full page reload or a JavaScript framework.
 
+## What It Looks Like
+
+Illustrative mockups (not live screenshots) of the three main screens, shown here with Rock's own public demo data:
+
+| Setup screen | Tap to Reveal | Multiple Choice |
+|---|---|---|
+| [![Setup screen: choose a list, game mode, and options](screenshots/setup-screen.svg)](screenshots/setup-screen.svg) | [![Tap to Reveal: a photo flips to show the name](screenshots/tap-to-reveal.svg)](screenshots/tap-to-reveal.svg) | [![Multiple Choice: pick the right name from four options](screenshots/multiple-choice.svg)](screenshots/multiple-choice.svg) |
+
 ## Requirements
 
 Rock RMS 18.0 or later, no exceptions. That version introduced both the Lava Applications feature and the built-in `{[ dropdown ]}` Lava shortcode this project depends on.

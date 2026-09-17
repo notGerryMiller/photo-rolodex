@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guess Who? Rock Community Recipe</title>
+<style>
+:root {
+    --invictus: #0A2540;
+    --invictus-tone: #164371;
+    --electric: #4BA9DF;
+    --electric-tone: #3097D2;
+    --twilight: #5D758B;
+    --twilight-soft: #CFD8E3;
+    --ink: #0D1117;
+    --muted: #425466;
+    --border: #D9D9E3;
+    --surface-soft: #F8F8FC;
+    --success: #01A11E;
+    --success-bg: #EBF7ED;
+    --warn: #E68E16;
+    --warn-bg: #FBF5EB;
+}
+* { box-sizing: border-box; }
+body {
+    font-family: 'Goldman Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    margin: 0;
+    background: #FFFFFF;
+    line-height: 1.6;
+}
+.header {
+    background: var(--invictus);
+    padding: 40px 56px 34px;
+    color: #FFFFFF;
+}
+.eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--electric);
+    background: rgba(255,255,255,0.08);
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+}
+.header h1 { font-weight: 900; font-size: 1.9rem; margin: 0 0 10px; max-width: 680px; }
+.header .subtitle { font-size: 1.05rem; color: #CFD8E3; margin: 0; max-width: 640px; }
+.meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    font-size: 0.85rem;
+}
+.meta-row div span {
+    display: block;
+    color: #97A9BA;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+}
+.content { max-width: 860px; margin: 0 auto; padding: 40px 56px 60px; }
+h2 {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--invictus);
+    margin: 38px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+}
+h2:first-child { margin-top: 0; }
+h3 { font-size: 1rem; font-weight: 700; color: var(--invictus-tone); margin: 22px 0 8px; }
+p { margin: 0 0 14px; color: var(--muted); }
+ol, ul { padding-left: 20px; color: var(--muted); }
+li { margin-bottom: 8px; }
+li strong { color: var(--ink); }
+code {
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.88em;
+    color: var(--invictus);
+}
+pre {
+    background: #0D1117;
+    color: #E5E9F0;
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 10px 0 20px;
+}
+pre code { background: none; border: none; color: inherit; padding: 0; }
+.callout {
+    border-left: 4px solid var(--electric);
+    background: var(--surface-soft);
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 18px 0;
+    color: var(--muted);
+}
+.callout strong { color: var(--invictus); }
+.callout.ok { border-left-color: var(--success); background: var(--success-bg); }
+.callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+.checklist { list-style: none; padding-left: 0; }
+.checklist li {
+    padding-left: 30px;
+    position: relative;
+}
+.checklist li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--success);
+    font-weight: 700;
+}
+table { border-collapse: collapse; width: 100%; margin: 12px 0 22px; font-size: 0.9rem; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--surface-soft); font-weight: 700; color: var(--invictus); }
+.badge {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    background: var(--twilight-soft); color: var(--invictus); font-size: 0.74rem; font-weight: 700;
+    margin-right: 6px;
+}
+a { color: var(--electric-tone); text-decoration: none; }
+a:hover { text-decoration: underline; }
+footer {
+    max-width: 860px; margin: 0 auto; padding: 24px 56px 48px;
+    border-top: 1px solid var(--border); color: var(--twilight); font-size: 0.82rem;
+}
+@media (max-width: 640px) {
+    .header, .content, footer { padding-left: 24px; padding-right: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="eyebrow">Rock Community Recipe &middot; Engagement / Lava / HTMX</div>
+    <h1>Guess Who? A Photo Name Game in Rock with Lava and HTMX</h1>
+    <p class="subtitle">Teach your team names, one face at a time, with a Lava block that swaps in the next question through HTMX instead of a full page reload.</p>
+    <div class="meta-row">
+        <div><span>Level</span>Intermediate</div>
+        <div><span>Requires</span>Rock RMS 18.0+</div>
+        <div><span>Author</span>Gerry Miller, Triumph Tech</div>
+    </div>
+</div>
+
+<div class="content">
+
+<div class="callout">
+<strong>Summary:</strong> A Lava block shows a random person's photo and asks the player to guess their name, then swaps in the result and the next question with HTMX, no full page reload and no JavaScript framework. The roster is not hardcoded anywhere. It is built live from Rock Tags, so any church can point this at its own people and its own database without touching a line of code.
+</div>
+
+<h2>Why this recipe</h2>
+<p>
+The Recipes library has plenty on communications, check-in, and giving, but not much showing HTMX driving interactivity inside Rock. HTMX is a small library that lets a page ask the server for a fragment of new HTML and swap it into place, no build step, no client-side framework, no page reload. This recipe uses a name-guessing game as an approachable, low-stakes vehicle for that pattern, because the technique underneath (partial swaps inside a Lava block, a server-side random pick, and game state carried through the request) generalizes far beyond a game.
+</p>
+<p>
+Knowing people's names is foundational to belonging and pastoral care, and it is one of the hardest things for a growing church to keep up with. This turns name-learning into a fast, repeatable habit for greeters, small group leaders, new staff, and serving-team volunteers, without adding anything to anyone's plate.
+</p>
+
+<h2>Prerequisites</h2>
+<ul>
+<li><strong>Rock RMS 18.0 or later, no exceptions.</strong> That version introduced both the Lava Applications feature and the built-in <code>{[ dropdown ]}</code> shortcode this build depends on. Check Admin Tools &gt; CMS Configuration for a Lava Applications item; if it is not there, this recipe will not run yet.</li>
+<li>HTMX loaded on the page or in the theme.</li>
+<li>A pool of people to draw from, each with a profile photo on file.</li>
+</ul>
+
+<h2>How the roster is sourced</h2>
+<p>
+Most recipes like this ask you to configure a group, a campus, or a data view up front. This one does not. Who is in the game is driven entirely by <strong>Rock Tags</strong>: tag the people you want, one at a time from a Person profile or in bulk from a Grid, and any active, organization-wide, Person-scoped tag shows up automatically in the setup screen's dropdown. Adding a new list is a staff action in Rock, not a code change or a redeploy.
+</p>
+<p>
+The setup endpoint builds that dropdown with a plain SQL query against Rock's own <code>Tag</code> and <code>EntityType</code> tables:
+</p>
+<pre><code>SELECT t.Id, t.Name
+FROM Tag t
+JOIN EntityType et ON et.Id = t.EntityTypeId
+WHERE et.Guid              = '72657ED8-D16E-492E-AC12-144C5E7567E7' -- Person
+  AND t.OwnerPersonAliasId IS NULL   -- organization-wide, not a personal tag
+  AND t.IsActive            = 1
+ORDER BY t.[Order], t.Name</code></pre>
+<p>
+<code>OwnerPersonAliasId IS NULL</code> is the detail worth noticing: it excludes personal tags owned by a single staff login, so one person's private tags never clutter everyone else's dropdown. Only tags meant to be shared show up.
+</p>
+<p>
+People without a profile photo are skipped automatically wherever the deck is built, so the game never shows a blank or placeholder image. If a tagged list looks smaller than expected, that is almost always why.
+</p>
+
+<h2>Building the deck</h2>
+<p>
+Once a tag is chosen, the game endpoint builds a shuffled deck from everyone carrying that tag who also has a photo on file and an active record status:
+</p>
+<pre><code>SELECT Id
+FROM (
+  SELECT DISTINCT p.Id
+  FROM TaggedItem ti
+  JOIN Person p ON p.Guid = ti.EntityGuid
+  WHERE ti.TagId             = @tagId
+    AND p.PhotoId             IS NOT NULL
+    AND p.RecordStatusValueId = 3
+) AS TaggedPeople
+ORDER BY NEWID()</code></pre>
+<p>
+The inner query deduplicates in case someone was tagged more than once with the same tag; SQL Server will not allow <code>ORDER BY NEWID()</code> directly against a <code>SELECT DISTINCT</code>, so the random shuffle happens in an outer query that wraps it instead. The resulting Id list becomes the deck, carried through the rest of the game entirely in the query string (deck order, current index, score), so a page reload never depends on server-side session state.
+</p>
+
+<h2>Wiring up HTMX</h2>
+<p>
+Every screen after the initial load is a normal link with <code>href="#"</code> and an <code>hx-get</code> attribute pointing at the next fragment, targeting the same container the whole game lives in:
+</p>
+<pre><code>&lt;a href="#" hx-get="{{ nextCardUrl }}" hx-target="#rolodex-app" class="btn btn-success btn-lg btn-block"&gt;
+  Next &lt;i class="fa fa-arrow-right"&gt;&lt;/i&gt;
+&lt;/a&gt;</code></pre>
+<p>
+Rock's Lava Applications support a shorthand for calling one endpoint from another: <code>^/{applicationSlug}/{endpointSlug}</code> resolves to the correct API path without hand-building it, which is what keeps the setup and game endpoints decoupled from a hardcoded URL.
+</p>
+<div class="callout warn">
+<strong>Security note:</strong> the tag and mode values traveling in the query string get echoed straight back into <code>href</code> and <code>hx-get</code> attributes on every screen. Run them through <code>UrlEncode</code> before rebuilding any URL from them, or a crafted query string could break out of the attribute and inject markup.
+</div>
+
+<h2>Setting up the game endpoint's list field</h2>
+<p>
+The setup screen's List field uses Rock's built-in <code>{[ dropdown ]}</code> shortcode rather than a hand-rolled <code>&lt;select&gt;</code>, with the options built dynamically from the tag query above:
+</p>
+<pre><code>{[ dropdown label:'List' name:'tag' longlistenabled:'true' isrequired:'true' ]}
+  [[ item value:'' text:'-- Choose a List --' ]][[ enditem ]]
+  {% for t in tags %}
+  [[ item value:'{{ t.Id }}' text:'{{ t.Name }}' ]][[ enditem ]]
+  {% endfor %}
+{[ enddropdown ]}</code></pre>
+<p>
+That shortcode's own markup carries a small inline script that initializes the enhanced, searchable dropdown, and it re-runs every time the shortcode's output is generated, including on an HTMX swap. That is what lets it work reliably even though this screen is delivered as a swapped fragment rather than a fresh page load.
+</p>
+
+<h2>Two ways to deploy</h2>
+<table>
+<tr><th>Option</th><th>What it is</th><th>Trade-off</th></tr>
+<tr>
+<td><strong>Lava Application (recommended)</strong></td>
+<td>One Lava Application with two LavaEndpoints (<code>setup</code> and <code>game</code>) plus a host page using the Lava Application Content Block.</td>
+<td>A LavaEndpoint's own URL is a bare API path with no site chrome, so the address bar is never updated. A refresh mid-game always returns to the setup screen.</td>
+</tr>
+<tr>
+<td><strong>Single-file fallback</strong></td>
+<td>One self-contained plain HTML Content block, no Lava Application setup required.</td>
+<td>Preserves progress across a refresh and degrades to real <code>href</code> navigation if HTMX fails, at the cost of not being a "real" Lava Application.</td>
+</tr>
+</table>
+<p>Both require Rock 18.0+ and the same Tag-based sourcing described above.</p>
+
+<h2>Optional: the "more about this person" panel</h2>
+<p>
+Both endpoints support a collapsed-by-default panel, shown after a card is answered or revealed, with campus, connection status, how long the person has been tagged with the list being played, household members, and up to three other non-family groups. It is controlled by a checkbox on the setup screen, threaded through the game the same way the score-tracking checkbox is. The excluded group type (Family, by default) is a single hardcoded GroupType GUID near the bottom of the endpoint file, easy to change if a church wants a different exclusion.
+</p>
+
+<h2>Validation checklist</h2>
+<p>Work through each of these before considering the game ready for real use:</p>
+<ul class="checklist">
+<li>A correct guess scores and advances to the next person.</li>
+<li>An incorrect guess does not score and gives clear feedback.</li>
+<li>People without a photo are never shown.</li>
+<li>A page reload does not break the game or double-count the score.</li>
+<li>The block only shows people the current user is permitted to see.</li>
+<li>HTMX swaps update only the intended region, with no full page reload.</li>
+<li>A tag with no eligible people shows a clear message instead of erroring.</li>
+</ul>
+
+<h2>Where this technique goes next</h2>
+<p>
+Nothing about this pattern is specific to a guessing game. A Lava block that pulls a random or filtered record, renders a fragment, and swaps itself with HTMX on every interaction is a template for anything that needs partial-page interactivity without a JavaScript framework: a quiz, a flash-card review, a rotating prayer request, a serving-team check-in. The game is the approachable wrapper. The technique is the reusable part.
+</p>
+
+</div>
+
+<footer>
+Built and maintained by Triumph Tech. Questions or want to see this pattern extended? Reach out at <a href="mailto:hello@triumph.tech">hello@triumph.tech</a>. Read the companion story on why this exists on the <a href="#">Triumph Tech blog</a>.
+</footer>
+
+</body>
+</html>
