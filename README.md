@@ -8,9 +8,17 @@ Almost no JavaScript is used. Interactions are either native HTML (`<details>/<s
 
 Illustrative mockups (not live screenshots) of the three main screens, shown here with Rock's own public demo data:
 
-| Setup screen | Tap to Reveal | Multiple Choice |
-|---|---|---|
-| [![Setup screen: choose a list, game mode, and options](screenshots/setup-screen.svg)](screenshots/setup-screen.svg) | [![Tap to Reveal: a photo flips to show the name](screenshots/tap-to-reveal.svg)](screenshots/tap-to-reveal.svg) | [![Multiple Choice: pick the right name from four options](screenshots/multiple-choice.svg)](screenshots/multiple-choice.svg) |
+**Setup screen**
+
+<img src="screenshots/setup-screen.svg" alt="Setup screen: choose a list, game mode, and options" width="640">
+
+**Tap to Reveal**
+
+<img src="screenshots/tap-to-reveal.svg" alt="Tap to Reveal: a photo flips to show the name" width="640">
+
+**Multiple Choice**
+
+<img src="screenshots/multiple-choice.svg" alt="Multiple Choice: pick the right name from four options" width="640">
 
 ## Requirements
 
