@@ -126,7 +126,7 @@
 {% comment %}── Fetch current card ──────────────────────────────────────────────{% endcomment %}
 {% assign currentId  = 0 %}
 {% assign personName = '' %}
-{% assign photoId    = 0 %}
+{% assign photoGuid  = '' %}
 
 {% if p_action == 'game' and totalCards > 0 and idx < totalCards %}
   {% assign currentId = 0 %}
@@ -144,12 +144,13 @@
       p.Id,
       COALESCE(NULLIF(p.NickName,''), p.FirstName) AS DisplayFirst,
       p.LastName,
-      p.PhotoId,
+      pf.Guid AS PhotoGuid,
       p.PrimaryFamilyId,
       cs.Value AS ConnectionStatus,
       c.Name AS CampusName,
       ti.CreatedDateTime AS TaggedSince
     FROM Person p
+    LEFT JOIN BinaryFile pf ON pf.Id = p.PhotoId
     LEFT JOIN DefinedValue cs ON cs.Id = p.ConnectionStatusValueId
     LEFT JOIN Campus c ON c.Id = p.PrimaryCampusId
     LEFT JOIN TaggedItem ti ON ti.TagId = {{ tagId }} AND ti.EntityGuid = p.Guid
@@ -157,7 +158,7 @@
   {% endsql %}
   {% assign curPerson  = results | First %}
   {% assign personName = curPerson.DisplayFirst | Append:' ' | Append:curPerson.LastName %}
-  {% assign photoId    = curPerson.PhotoId %}
+  {% assign photoGuid  = curPerson.PhotoGuid %}
 
   {% comment %}── More-info lookups: household + other groups (only when enabled) ─
     Two extra queries per card, only run when the player has the "Show
@@ -589,7 +590,12 @@
 
     {% comment %}── Photo ──{% endcomment %}
     <div class="rd-photo-card rounded-lg shadow-md bg-gray-100 overflow-hidden mb-3">
-      <img src="/GetImage.ashx?Id={{ photoId }}&maxWidth=600" alt="Guess who?"
+      {% comment %}
+        guid= rather than Id=: on Rock v19 with the "Disable Predictable Ids"
+        security setting on, GetImage.ashx rejects Id= with a 400. guid= is
+        what Rock itself emits and works with that setting on or off.
+      {% endcomment %}
+      <img src="/GetImage.ashx?guid={{ photoGuid }}&maxWidth=600" alt="Guess who?"
            class="w-100 h-100 object-cover" style="object-position: center top;" />
     </div>
 
